@@ -3,7 +3,7 @@ import { Card } from "@/components/ui/card";
 import MessageBubble from "./MessageBubble";
 import { MouseEvent, FormEvent } from "react";
 import { useState } from "react";
-// import axios from "axios";
+import axios from "axios";
 
 interface Message {
   content: string;
@@ -14,7 +14,9 @@ function ChatWindow() {
   const [prompt, setPrompt] = useState<string>("");
   const [messages, setMessages] = useState<Message[]>([]);
 
-  const handleMessageSend = (e: MouseEvent | FormEvent<HTMLFormElement>) => {
+  const handleMessageSend = async (
+    e: MouseEvent | FormEvent<HTMLFormElement>
+  ) => {
     e.preventDefault();
     if (!prompt.trim()) return;
 
@@ -25,6 +27,31 @@ function ChatWindow() {
 
     setMessages([...messages, newMessage]);
     setPrompt("");
+
+    try {
+      const response = await axios.post(
+        "https://api.openai.com/v1/chat/completions",
+        {
+          model: "gpt-4o-mini",
+          messages: [{ role: "user", content: prompt }],
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${import.meta.env.VITE_OPENAI_API_KEY}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      const botMessage: Message = {
+        content: response.data.choices[0].message.content,
+        role: "bot",
+      };
+
+      setMessages([...messages, botMessage]);
+    } catch (error) {
+      console.error(error);
+    }
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
