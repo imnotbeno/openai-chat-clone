@@ -1,5 +1,6 @@
 import InputWithButton from "./InputWithButton";
 import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import MessageBubble from "./MessageBubble";
 import { MouseEvent, FormEvent, useEffect, useState } from "react";
 import axios from "axios";
@@ -73,6 +74,11 @@ function ChatWindow() {
     setPrompt(e.target.value);
   };
 
+  const handleClearChat = () => {
+    setMessages([]);
+    localStorage.removeItem("messages");
+  };
+
   return (
     <Card className="w-full max-w-md mx-auto p-4 rounded-lg shadow-md">
       <div className="h-80 overflow-y-auto p-2 border border-gray-300 rounded bg-gray-50">
@@ -87,15 +93,22 @@ function ChatWindow() {
           <p className="text-gray-500 text-sm mt-2">Bot is typing...</p>
         )}
       </div>
-      <div className="flex mt-4 gap-2">
-        <InputWithButton
-          buttonName="Send"
-          placeholder="Ask me anything..."
-          prompt={prompt}
-          onClick={(event) => handleMessageSend(event)}
-          onKeyDown={(event) => handleMessageSend(event)}
-          onChange={(event) => handleInputChange(event)}
-        />
+      <div className="flex gap-2">
+        <div className="mt-4">
+          <InputWithButton
+            buttonName="Send"
+            placeholder="Ask me anything..."
+            prompt={prompt}
+            onClick={(event) => handleMessageSend(event)}
+            onKeyDown={(event) => handleMessageSend(event)}
+            onChange={(event) => handleInputChange(event)}
+          />
+        </div>
+        <div className="justify-end mt-8">
+          <Button variant="destructive" onClick={() => handleClearChat()}>
+            Clear Chat
+          </Button>
+        </div>
       </div>
     </Card>
   );
