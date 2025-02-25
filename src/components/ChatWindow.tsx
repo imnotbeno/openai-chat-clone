@@ -1,8 +1,7 @@
 import InputWithButton from "./InputWithButton";
 import { Card } from "@/components/ui/card";
 import MessageBubble from "./MessageBubble";
-import { MouseEvent, FormEvent } from "react";
-import { useState } from "react";
+import { MouseEvent, FormEvent, useEffect, useState } from "react";
 import axios from "axios";
 
 interface Message {
@@ -12,8 +11,15 @@ interface Message {
 
 function ChatWindow() {
   const [prompt, setPrompt] = useState<string>("");
-  const [messages, setMessages] = useState<Message[]>([]);
+  const [messages, setMessages] = useState<Message[]>(() => {
+    const savedMessages = localStorage.getItem("messages");
+    return savedMessages ? JSON.parse(savedMessages) : [];
+  });
   const [isTyping, setIsTyping] = useState<boolean>(false);
+
+  useEffect(() => {
+    localStorage.setItem("messages", JSON.stringify(messages));
+  }, [messages]);
 
   const handleMessageSend = async (
     e: MouseEvent | FormEvent<HTMLFormElement>
@@ -26,7 +32,7 @@ function ChatWindow() {
       role: "user",
     };
 
-    setMessages([...messages, newMessage]);
+    setMessages((messages) => [...messages, newMessage]);
     setPrompt("");
 
     setIsTyping(true);
@@ -51,10 +57,13 @@ function ChatWindow() {
         role: "bot",
       };
 
-      setMessages([...messages, botMessage]);
+      setMessages((messages) => [...messages, botMessage]);
     } catch (error) {
       console.error(error);
-      setMessages([...messages, { content: "An error occurred", role: "bot" }]);
+      setMessages((messages) => [
+        ...messages,
+        { content: "An error occurred", role: "bot" },
+      ]);
     } finally {
       setIsTyping(false);
     }
