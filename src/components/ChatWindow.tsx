@@ -13,6 +13,7 @@ interface Message {
 function ChatWindow() {
   const [prompt, setPrompt] = useState<string>("");
   const [messages, setMessages] = useState<Message[]>([]);
+  const [isTyping, setIsTyping] = useState<boolean>(false);
 
   const handleMessageSend = async (
     e: MouseEvent | FormEvent<HTMLFormElement>
@@ -27,6 +28,8 @@ function ChatWindow() {
 
     setMessages([...messages, newMessage]);
     setPrompt("");
+
+    setIsTyping(true);
 
     try {
       const response = await axios.post(
@@ -51,6 +54,9 @@ function ChatWindow() {
       setMessages([...messages, botMessage]);
     } catch (error) {
       console.error(error);
+      setMessages([...messages, { content: "An error occurred", role: "bot" }]);
+    } finally {
+      setIsTyping(false);
     }
   };
 
@@ -68,6 +74,9 @@ function ChatWindow() {
             sender={message.role}
           />
         ))}
+        {isTyping && (
+          <p className="text-gray-500 text-sm mt-2">Bot is typing...</p>
+        )}
       </div>
       <div className="flex mt-4 gap-2">
         <InputWithButton
