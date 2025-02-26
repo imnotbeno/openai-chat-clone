@@ -3,7 +3,7 @@ import express from "express";
 import http from "http";
 import { Server } from "socket.io";
 import cors from "cors";
-import axios from "axios";
+import OpenAI from "openai";
 
 const app = express();
 const server = http.createServer(app);
@@ -17,6 +17,10 @@ const io = new Server(server, {
 
 app.use(cors());
 
+const openai = new OpenAI({
+    apiKey: process.env.VITE_OPENAI_API_KEY,
+})
+
 io.on("connection", (socket) => {
     console.log("User connected:", socket.id);
 
@@ -25,26 +29,24 @@ io.on("connection", (socket) => {
 
 
         try {
-            const response = await axios.post(
-                "https://api.openai.com/v1/chat/completions",
-                {
-                    model: "gpt-3.5-turbo",
-                    messages: [{ role: "user", content: data.content }],
-                },
-                {
-                    headers: {
-                        Authorization: `Bearer ${process.env.VITE_OPENAI_API_KEY}`,
-                        "Content-Type": "application/json",
-                    },
-                }
-            );
-
+            const stream = await openai.chat.completions.create({
+                model: "gpt-3.5-turbo",
+                messages: [{ role: "user", content: data.content }],
+                stream: true,
+            });
+            
             const botMessage = {
-                content: response.data.choices[0].message.content,
+                content: "",
                 role: "bot",
             };
 
+            for await (const chunk of stream) {
+                if (chunk.choices?.[0]?.delta?.content) {
+                    botMessage.content += chunk.choices[0]?.delta?.content;
+                }
+            }
             io.emit("receive_message", botMessage);
+
         } catch (error) {
             console.error(error);
             io.emit("receive_message", { content: "An error occurred", role: "bot" });
