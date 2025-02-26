@@ -3,12 +3,14 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import MessageBubble from "./MessageBubble";
 import { MouseEvent, FormEvent, useEffect, useState } from "react";
-import axios from "axios";
+import { io } from "socket.io-client";
 
 interface Message {
   content: string;
   role: "user" | "bot";
 }
+
+const socket = io("http://localhost:3001");
 
 function ChatWindow() {
   const [prompt, setPrompt] = useState<string>("");
@@ -21,6 +23,17 @@ function ChatWindow() {
   useEffect(() => {
     localStorage.setItem("messages", JSON.stringify(messages));
   }, [messages]);
+
+  useEffect(() => {
+    socket.on("receive_message", (data: Message) => {
+      setMessages((messages) => [...messages, data]);
+      setIsTyping(false);
+    });
+
+    return () => {
+      socket.off("receive_message");
+    };
+  }, []);
 
   const handleMessageSend = async (
     e: MouseEvent | FormEvent<HTMLFormElement>
@@ -38,36 +51,7 @@ function ChatWindow() {
 
     setIsTyping(true);
 
-    try {
-      const response = await axios.post(
-        "https://api.openai.com/v1/chat/completions",
-        {
-          model: "gpt-4o-mini",
-          messages: [{ role: "user", content: prompt }],
-        },
-        {
-          headers: {
-            Authorization: `Bearer ${import.meta.env.VITE_OPENAI_API_KEY}`,
-            "Content-Type": "application/json",
-          },
-        }
-      );
-
-      const botMessage: Message = {
-        content: response.data.choices[0].message.content,
-        role: "bot",
-      };
-
-      setMessages((messages) => [...messages, botMessage]);
-    } catch (error) {
-      console.error(error);
-      setMessages((messages) => [
-        ...messages,
-        { content: "An error occurred", role: "bot" },
-      ]);
-    } finally {
-      setIsTyping(false);
-    }
+    socket.emit("send_message", newMessage);
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
