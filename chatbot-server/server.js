@@ -28,7 +28,7 @@ io.on("connection", (socket) => {
             const response = await axios.post(
                 "https://api.openai.com/v1/chat/completions",
                 {
-                    model: "gpt-4o-mini",
+                    model: "gpt-3.5-turbo",
                     messages: [{ role: "user", content: data.content }],
                 },
                 {
@@ -49,11 +49,6 @@ io.on("connection", (socket) => {
             console.error(error);
             io.emit("receive_message", { content: "An error occurred", role: "bot" });
         }
-    
-        // Simulate bot response
-        setTimeout(() => {
-        io.emit("receive_message", { text: `Echo: ${data.text}`, sender: "bot" });
-        }, 1000);
     });
 
     socket.on("disconnect", () => {
